@@ -23,9 +23,21 @@
     show_progress_bar: true,
     on_finish: function() {
       jsPsych.data.get().localSave('csv', 'results.csv'); //save data at the end as a csv file
-      jsPsych.data.displayData();
+      jsPsych.run(debreifing)
     }
   });
+// message
+  var debriefing = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <p>Thank you for participating in this experiment!</p>
+        <p>This study was designed to investigate how individuals perceive similarities and differences between images. By examining your responses, we aim to gain a better understanding of visual perception and decision-making processes.</p>
+        <p>If you have any questions or concerns about this study, please feel free to contact the research team.</p>
+        <p>Press any key to finish the experiment.</p>
+    `
+  };
+
+  timeline.push(debreifing);
 
   // Create timeline
   var timeline = [];
@@ -137,6 +149,19 @@
     ]
   };
   timeline.push(participant_id_entry);
+
+  var overall_instructions = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <p>Welcome to the experiment.</p>
+        <p>In this task, you will see pairs of images.</p>
+        <p>Your job is to determine whether the two images are the same or different.</p>
+        <p>Press the <strong>F</strong> key if the images are the same.</p>
+        <p>Press the <strong>J</strong> key if the images are different.</p>
+        <p>Press any key to begin.</p>
+    `
+};
+timeline.push(overall_instructions);
 
   //create an array of test images
    var test_images = [
