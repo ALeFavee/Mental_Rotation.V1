@@ -20,9 +20,21 @@
     on_finish: function() {
       //downloating results as a csv at the end of the experiment
       jsPsych.data.get().localSave('csv', 'results.csv');
-      jsPsych.data.displayData();
+      jsPsych.run(debriefing);
     }
   });
+
+  var debriefing = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <p>Thank you for participating in this experiment!</p>
+        <p>This study was designed to investigate how individuals perceive similarities and differences between images. By examining your responses, we aim to gain a better understanding of visual perception and decision-making processes.</p>
+        <p>If you have any questions or concerns about this study, please feel free to contact the research team.</p>
+        <p>Press any key to finish the experiment.</p>
+    `
+};
+
+timeline.push(debreifing)
 
   // Create timeline
   var timeline = [];
