@@ -12,32 +12,35 @@
   <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.2.0"></script>
   <link href="https://unpkg.com/jspsych@8.0.0/css/jspsych.css" rel="stylesheet" type="text/css" />
   <script src="https://unpkg.com/@jspsych/plugin-survey-html-form@1.0.3"></script>
+  <!-- This is for data storage - please be sure to keep this script in all future updates to the code!! -->
+  <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
 
 </head>
 
 <body></body>
 <script>
 
-  // Initialize jsPsych + show progress bar up to
-  var jsPsych = initJsPsych({
+ // Initialize jsPsych + show progress bar up to
+ var jsPsych = initJsPsych({
     show_progress_bar: true,
-    on_finish: function() {
-      jsPsych.data.get().localSave('csv', 'results.csv'); //save data at the end as a csv file
-      jsPsych.run(debreifing)
+    on_finish: function () {
+      jsPsych.data.displayData();
     }
   });
-// message
-  var debriefing = {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: `
-        <p>Thank you for participating in this experiment!</p>
-        <p>This study was designed to investigate how individuals perceive similarities and differences between images. By examining your responses, we aim to gain a better understanding of visual perception and decision-making processes.</p>
-        <p>If you have any questions or concerns about this study, please feel free to contact the research team.</p>
-        <p>Press any key to finish the experiment.</p>
-    `
-  };
 
-  timeline.push(debreifing);
+   //PLEASE KEEP FOR ALL FUTURE ITERATIONS
+  //create a unique filename by combining a random string and a millisecond counter (to avoid duplicates)
+  var random_id = jsPsych.randomization.randomID(10);
+  const date = new Date();
+  random_id = "p"+random_id.toString();
+  var file_id = random_id + "_" + date.getTime().toString();
+  const filename = `${file_id}.csv`;
+  //also store the random id for convenience
+  jsPsych.data.addProperties({
+        random_id: random_id,
+      });
+  //PLEASE KEEP FOR ALL FUTURE ITERATIONS
+
 
   // Create timeline
   var timeline = [];
@@ -155,7 +158,7 @@
     stimulus: `
         <p>Welcome to the experiment.</p>
         <p>In this task, you will see pairs of images.</p>
-        <p>Your job is to determine whether the two images are the same or different.</p>
+        <p>Your job is to determine whether the image on the right is a rotated version of the image on the left.</p>
         <p>Press the <strong>F</strong> key if the images are the same.</p>
         <p>Press the <strong>J</strong> key if the images are different.</p>
         <p>Press any key to begin.</p>
@@ -243,14 +246,61 @@ timeline.push(overall_instructions);
 'stimuli/47_100.jpg', 'stimuli/47_150_R.jpg', 'stimuli/47_150.jpg', 'stimuli/48_0_R.jpg', 'stimuli/48_0.jpg', 
 'stimuli/48_50_R.jpg', 'stimuli/48_50.jpg', 'stimuli/48_100_R.jpg','stimuli/48_100.jpg', 'stimuli/48_150_R.jpg', 'stimuli/48_150.jpg'
    ];
-// Shuffle the test images
-var shuffled_test_images = jsPsych.randomization.repeat(test_images, 1);
+
+
+// code below ensures that for every participant, they see a different array of images 
+  // randomly select 24 images that are rotated 0 degrees & half of them contain incorrect rotation 
+  let zeroDegree = jsPsych.randomization.sampleWithoutReplacement(
+  test_images.filter(img => img.includes("_0.") && !img.includes("_R")), 12
+).concat(
+  jsPsych.randomization.sampleWithoutReplacement(
+    test_images.filter(img => img.includes("_0_R")), 12
+  )
+);
+  // randomly select 24 images that are rotated 50 degrres & half of them contain incorrect rotation 
+  let fiftyDegree = jsPsych.randomization.sampleWithoutReplacement(
+  test_images.filter(img => img.includes("_50.") && !img.includes("_R")), 12
+).concat(
+  jsPsych.randomization.sampleWithoutReplacement(
+    test_images.filter(img => img.includes("_50_R")), 12
+  )
+);
+
+  // randomly select 24 images that are rotated 100 degrees & half of them contain incorrect rotation 
+  let oneHundredDegree = jsPsych.randomization.sampleWithoutReplacement(
+  test_images.filter(img => img.includes("_100.") && !img.includes("_R")), 12
+).concat(
+  jsPsych.randomization.sampleWithoutReplacement(
+    test_images.filter(img => img.includes("_100_R")), 12
+  )
+);
+
+  // randomly select 24 images that are rotated 150 degrees & half of them contain incorrect rotation 
+  let oneHundredFiftyDegree = jsPsych.randomization.sampleWithoutReplacement(
+  test_images.filter(img => img.includes("_150.") && !img.includes("_R")), 12
+).concat(
+  jsPsych.randomization.sampleWithoutReplacement(
+    test_images.filter(img => img.includes("_150_R")), 12
+  )
+);
+
+  // add all images into array to be randomly tested 
+  var shuffled_test_images = jsPsych.randomization.shuffle(
+    zeroDegree.concat(fiftyDegree, oneHundredDegree, oneHundredFiftyDegree));
+
+// Print the selected images to the console
+console.log("Selected images for testing:", shuffled_test_images);
+console.log("Selected zero-degree images:", zeroDegree);
+console.log("Selected fifty-degree images:", fiftyDegree);
+console.log("Selected one-hundred-degree images:", oneHundredDegree);
+console.log("Selected one-hundred-fifty-degree images:", oneHundredFiftyDegree);
+
 
 // Initialize an empty array for trials
 var trials = [];
 
 // setting up counter to split length of exp based on image count 
-var halfwayPoint = Math.floor(test_images.length / 4)
+var halfwayPoint = Math.floor(shuffled_test_images.length / 2)
 var counter = 0 
 
 for (let i = 0; i < shuffled_test_images.length; i++) {
@@ -258,14 +308,14 @@ for (let i = 0; i < shuffled_test_images.length; i++) {
   let correct_response = shuffled_test_images[i].includes("_R") ? 'j' : 'f';
   
   //line below only relevant if we have a trial counter to display
-  ///let remainingTrials = shuffled_test_images.length - i;
+  //let remainingTrials = shuffled_test_images.length - i;
   
   // mental rotation trial
   var mental_rotation_trial = {
     type: jsPsychImageKeyboardResponse,
     stimulus: shuffled_test_images[i],
     choices: ['f', 'j'],
-    prompt: "<p>Press 'f' if the images are the same, 'j' if they are different.</p>" ,
+    prompt: "<p>Press 'f' if the images are the same, 'j' if they are different.</p>",
     
     //line below only relevant if we have a trial counter to display
     //+ "<p>Remaining images: " + remainingTrials + "</p>",
@@ -303,7 +353,7 @@ for (let i = 0; i < shuffled_test_images.length; i++) {
   if(++counter === halfwayPoint) {
     var break_trial = {
       type: jsPsychHtmlKeyboardResponse,
-      stimulus: "<p> Take a break! Exp continues in 30 seconds . </p>",
+      stimulus: "<p> Take a break! Experiment continues in 30 seconds . </p>",
       trial_duration: 30000,
       choices: ['space']
     };
@@ -311,8 +361,7 @@ for (let i = 0; i < shuffled_test_images.length; i++) {
   }
 }
 
-// get csv representation of data and log to console
-console.log(jsPsych.data.get().csv());
+
   // run exp
 timeline.push(...trials);
 
@@ -580,6 +629,10 @@ timeline.push(demographic_message);
                 <label for="technical_difficulties">Did you experience any technical difficulties during the experiment? If yes, please describe:</label>
                 <textarea id="technical_difficulties" name="technical_difficulties" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
             </div>
+        <div class="form-group">
+                <label for="knowledge_check">What do you think the experiment was testing?</label>
+                <textarea id="knowledge_check" name="knowledge_check" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+            </div>
         </div>
     `,
     button_label: 'Continue',
@@ -611,12 +664,32 @@ timeline.push(demographic_message);
 // Add the survey to the timeline instead of the Google Form link
 timeline.push(demographicSurvey);  
 
-  // Final message
-  var final_message = {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: "<p>Thank you for participating!</p><p>Press any key to finish.</p>"
+
+//PLEASE KEEP FOR ALL FUTURE ITERATIONS
+  //this portion of the code ensures that the data gets sent to be stored on OSF
+  const save_data = {
+    type: jsPsychPipe,
+    action: "save",
+    experiment_id: "gMpfSRsXGlob",
+    filename: filename,
+    data_string: () => jsPsych.data.get().csv()
   };
-  timeline.push(final_message);
+  timeline.push(save_data);
+  //PLEASE KEEP FOR ALL FUTURE ITERATIONS
+
+
+// debrief msg 
+var debriefing = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <p>Thank you for participating in this experiment!</p>
+        <p>This study was designed to investigate your ability to mentally rotate objects. By examining your responses, we aim to understand how visual-spatial information is processed and maintained!</p>
+        <p>If you have any questions or concerns about this study, please feel free to contact the Mental Rotation research team.</p>
+        <p>Press any key to finish the experiment.</p>
+    `
+  };
+
+  timeline.push(debriefing);
 
 
     // Exit fullscreen mode
