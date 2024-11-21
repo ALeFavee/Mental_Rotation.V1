@@ -61,6 +61,19 @@
   };
   timeline.push(participant_id_entry);
 
+  var overall_instructions = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <p>Welcome to the experiment.</p>
+        <p>In this task, you will see pairs of images.</p>
+        <p>Your job is to determine whether the two images are the same or different.</p>
+        <p>Press the <strong>F</strong> key if the images are the same.</p>
+        <p>Press the <strong>J</strong> key if the images are different.</p>
+        <p>Press any key to begin.</p>
+    `
+};
+timeline.push(overall_instructions);
+
   // Mental rotation trial
   var mental_rotation_trial = {
     type: jsPsychImageKeyboardResponse,
