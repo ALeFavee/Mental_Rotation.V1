@@ -165,6 +165,8 @@ processed_data %>%
   geom_smooth(method="lm", se = FALSE, color = "black", linetype = "dotted") +
   theme_bw()
 
+#analyses 
+summary(aov(rt ~ angle * same_different + Error(participant_id/angle*same_different), data = processed_data))
 
 ```
 
@@ -195,7 +197,6 @@ reactionTimeandAccuracyTable %>%
     linetype = "dotted"
   ) +
   theme_bw()
-
 ```
 
 ## VVIQ Analyses (comment: need to decide whether to use mean_se or mean_cl_boot)
@@ -240,6 +241,8 @@ VVIQData %>%
     geom_vline(xintercept = 74, color = "blue", linetype = "dashed", size = 1) +  # conservative cutoff for hyperphantasia
   theme_bw()
   
+#analyses 
+summary(aov(rt ~ VVIQRaw + Error(participant_id), data = VVIQData))
 ```
 
 
@@ -265,6 +268,9 @@ processed_data %>%
        y = "Response Time (ms)",
        x = "Gender") +
   theme_bw()
+
+#analyses 
+summary(aov(rt ~ gender + Error(participant_id), data = processed_data))
 ```
 
 ### Handeness
@@ -288,6 +294,9 @@ processed_data %>%
        y = "Response Time (ms)",
        x = "Handedness") +
   theme_bw()
+
+#analyses 
+summary(aov(rt ~ handedness + Error(participant_id), data = processed_data))
 ```
 
 ### Age
@@ -312,5 +321,8 @@ processed_data %>%
        x = "Age") +
   geom_smooth(method="lm", se = FALSE, color = "black", linetype = "dotted") +
   theme_bw()
+
+#analyses 
+summary(aov(rt ~ age + Error(participant_id), data = processed_data))
 ```
 
