@@ -37,7 +37,7 @@ processed_data <- read_csv(paste0("https://raw.githubusercontent.com/COGS119/gro
 ```
 ## convert to Excel for checking out dataset
 ```{r}
-install.packages("writexl")
+#install.packages("writexl")
 library(writexl)
 
 
@@ -88,7 +88,7 @@ reactionTimeandAccuracyTable = reactionTimeandAccuracy %>%
   group_by(angle) %>%
   summarize(meanRt = mean(rt),
             meanAcc = sum(is_right == '1')/ n() * 100,
-            errorRate = sum(is_right == '0') / n() * 100,
+            errorRate = sum(is_right == '0') / n() * 100),
             seErrorRate = sqrt((errorRate / 100) * (1 - errorRate / 100) / n()) * 100)
 
 reactionTimeandAccuracyTable
@@ -139,17 +139,16 @@ reactionTimeandAccuracyTable %>%
 
 
 ## Real Code (RT + Error Rate) (comment: need to decide whether to use mean_se or mean_cl_boot)
+
+
 ```{r}
 processed_data %>%
-  ggplot(aes(x = angle, y = rt)) +
+  group_by(participant_id, angle) %>%
+  summarise(mean_rt = mean(rt, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = angle, y = mean_rt)) +
   stat_summary(
-    fun = mean,
-    geom = "point",
-    color = "black",
-    size = 3
-  ) +
-  stat_summary(
-    fun.data = mean_se, # Automatically calculates mean and SE
+    fun.data = mean_se, 
     geom = "pointrange",
     color = "black",
     shape = 21,
@@ -167,15 +166,32 @@ processed_data %>%
 
 #analyses 
 summary(aov(rt ~ angle * same_different + Error(participant_id/angle*same_different), data = processed_data))
-
 ```
 
+
 ```{r}
-reactionTimeandAccuracyTable %>%
-  ggplot(aes(x = angle, y = errorRate)) + 
+subj_averagesER <- processed_data %>%
+  group_by(random_id,angle) %>%
+  summarize(meanRt = mean(rt),
+            meanAcc = sum(is_right == '1')/ n() * 100,
+            errorRate = sum(is_right == '0') / n() * 100)
+
+overall_averagesER <- subj_averagesER %>%
+  group_by(angle) %>%
+  summarize(
+    N=n(),
+    avg_rt = mean(meanRt),
+    avg_accuracy = mean(meanAcc),
+    avg_error_rate = mean(errorRate),
+    sd_error_rate = sd(errorRate),
+    se_error_rate = sd_error_rate/sqrt(N)
+  )
+
+overall_averagesER %>%
+  ggplot(aes(x = angle, y = avg_error_rate)) + 
   geom_point(color = "blue", size = 2) + 
   geom_errorbar(
-    aes(ymin = errorRate - seErrorRate, ymax = errorRate + seErrorRate), 
+    aes(ymin = avg_error_rate - se_error_rate, ymax = avg_error_rate + se_error_rate), 
     width = 0.2, 
     color = "black"
   ) +
@@ -197,6 +213,11 @@ reactionTimeandAccuracyTable %>%
     linetype = "dotted"
   ) +
   theme_bw()
+
+#analyses 
+summary(aov(
+  errorRate ~ angle + Error(random_id / angle), data = subj_averagesER))
+
 ```
 
 ## VVIQ Analyses (comment: need to decide whether to use mean_se or mean_cl_boot)
@@ -218,7 +239,10 @@ VVIQData = processed_data %>%
 
 ```{r}
 VVIQData %>%
-  ggplot(aes(x = VVIQRaw, y = rt)) +
+   group_by(participant_id, VVIQRaw) %>%
+  summarise(mean_rt = mean(rt, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = VVIQRaw, y = mean_rt)) +
   stat_summary(
     fun = mean,
     geom = "point",
@@ -241,6 +265,11 @@ VVIQData %>%
     geom_vline(xintercept = 74, color = "blue", linetype = "dashed", size = 1) +  # conservative cutoff for hyperphantasia
   theme_bw()
   
+# counting participants per VVIQ score
+VVIQData %>%
+   group_by(VVIQRaw) %>%
+  summarize(number = n() / 96)
+
 #analyses 
 summary(aov(rt ~ VVIQRaw + Error(participant_id), data = VVIQData))
 ```
@@ -249,8 +278,11 @@ summary(aov(rt ~ VVIQRaw + Error(participant_id), data = VVIQData))
 ## Demographics Analyses 
 ### Gender 
 ```{r}
-processed_data %>%
-  ggplot(aes(x = gender, y = rt)) +
+processed_data  %>%
+   group_by(participant_id, gender) %>%
+  summarise(mean_rt = mean(rt, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = gender, y = mean_rt)) +
   stat_summary(
     fun = mean,
     geom = "point",
@@ -269,14 +301,22 @@ processed_data %>%
        x = "Gender") +
   theme_bw()
 
+# counting participants per gender
+processed_data %>%
+   group_by(gender) %>%
+  summarize(number = n() / 96)
+
 #analyses 
 summary(aov(rt ~ gender + Error(participant_id), data = processed_data))
 ```
 
 ### Handeness
 ```{r}
-processed_data %>%
-  ggplot(aes(x = handedness, y = rt)) +
+processed_data  %>%
+   group_by(participant_id, handedness) %>%
+  summarise(mean_rt = mean(rt, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = handedness, y = mean_rt)) +
   stat_summary(
     fun = mean,
     geom = "point",
@@ -295,14 +335,21 @@ processed_data %>%
        x = "Handedness") +
   theme_bw()
 
+# counting participants 
+processed_data %>%
+   group_by(handedness) %>%
+  summarize(number = n() / 96)
 #analyses 
 summary(aov(rt ~ handedness + Error(participant_id), data = processed_data))
 ```
 
 ### Age
 ```{r}
-processed_data %>%
-  ggplot(aes(x = age, y = rt)) +
+processed_data  %>%
+   group_by(participant_id, age) %>%
+  summarise(mean_rt = mean(rt, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = age, y = mean_rt)) +
   stat_summary(
     fun = mean,
     geom = "point",
